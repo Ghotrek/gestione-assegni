@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f8f8f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Assegni">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Gestione Assegni</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234257d6'/%3E%3Crect x='6' y='10' width='20' height='12' rx='2.5' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M9.5 18h5M9.5 14.5h3M18 18h4' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f8f8f6;
+  --surface: #ffffff;
+  --ink: #1d2025;
+  --ink-2: #4a4f57;
+  --muted: #8a8f98;
+  --line: #ebebe7;
+  --line-2: #dfdfda;
+  --hover: #f3f3f0;
+  --accent: #4257d6;
+  --accent-soft: #eef0fd;
+  --ok: #1f8a4c;     --ok-soft: #e8f6ee;
+  --wait: #b4660b;   --wait-soft: #fdf3e3;
+  --void: #6b7079;   --void-soft: #f0f0ee;
+  --danger: #c43d3d; --danger-soft: #fcecec;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20, 22, 26, .04), 0 2px 8px rgba(20, 22, 26, .04);
+  --shadow-lg: 0 12px 40px rgba(20, 22, 26, .14);
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+[hidden] { display: none !important; }
+svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+h1, h2, h3 { font-weight: 600; letter-spacing: -.01em; margin: 0; }
+h1 { font-size: 22px; }
+h2 { font-size: 17px; }
+h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 22px 0 10px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.spacer { flex: 1; }
+
+/* ---------- Top bar ---------- */
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 24px; background: rgba(248, 248, 246, .88); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+.logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: #fff; }
+.logo svg { width: 19px; height: 19px; }
+.dbswitch { position: relative; }
+.dbbtn { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 12px; border: 1px solid var(--line-2); background: var(--surface); border-radius: 8px; font: inherit; color: var(--ink); cursor: pointer; }
+.dbbtn:hover { border-color: #cfcfc9; }
+.dbbtn .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.dbbtn .chev { width: 16px; height: 16px; color: var(--muted); }
+.demo-badge { font-size: 12px; padding: 3px 9px; border-radius: 99px; background: var(--wait-soft); color: var(--wait); }
+.iconbtn { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; }
+.iconbtn:hover { background: var(--hover); color: var(--ink); }
+
+/* ---------- Menu ---------- */
+.menu { position: absolute; z-index: 50; min-width: 220px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); }
+.dbswitch .menu { top: 40px; left: 0; }
+.menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; background: none; border-radius: 6px; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.menu button:hover { background: var(--hover); }
+.menu button.current { font-weight: 600; }
+.menu button.current::after { content: "✓"; margin-left: auto; color: var(--accent); }
+.menu button .sub { color: var(--muted); font-size: 12px; margin-left: auto; }
+.menu button.danger { color: var(--danger); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; }
+.ctx { position: fixed; }
+
+/* ---------- Buttons & inputs ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background .12s, border-color .12s; }
+.btn:hover { background: var(--hover); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: #3647bf; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn.ghost:hover { background: var(--hover); color: var(--ink); }
+.btn.danger-ghost { border-color: transparent; background: transparent; color: var(--danger); }
+.btn.danger-ghost:hover { background: var(--danger-soft); }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+.btn svg { width: 16px; height: 16px; }
+
+input[type=text], input[type=date], input[type=number], input[type=search], select {
+  width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); font: inherit; color: var(--ink); outline: none; transition: border-color .12s, box-shadow .12s;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+input.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; vertical-align: middle; }
+label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.inputgroup { display: flex; gap: 6px; }
+
+.grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px 16px; align-items: end; }
+.grid-form .wide { grid-column: span 2; }
+.form-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; grid-column: -2 / -1; }
+.form-actions.wide { grid-column: 1 / -1; }
+.hint { margin: 0; color: var(--muted); font-size: 13px; align-self: center; }
+.presets { display: flex; gap: 6px; align-items: center; grid-column: span 2; }
+.chip { height: 30px; padding: 0 11px; border: 1px solid var(--line-2); border-radius: 99px; background: var(--surface); font: inherit; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+.chip:hover { background: var(--hover); color: var(--ink); }
+
+/* ---------- Layout ---------- */
+.main { max-width: 1440px; margin: 0 auto; padding: 22px 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stat { padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color .12s, box-shadow .12s; }
+.stat:hover { border-color: var(--line-2); box-shadow: var(--shadow); }
+.stat .lbl { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.stat .lbl i { width: 8px; height: 8px; border-radius: 50%; }
+.stat .val { font-size: 20px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.stat .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.stat.alert .val { color: var(--danger); }
+
+.tools { padding: 0 18px 18px; }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 0 -18px 18px; padding: 0 12px; }
+.tabs button { position: relative; height: 44px; padding: 0 12px; border: 0; background: none; font: inherit; font-weight: 500; color: var(--muted); cursor: pointer; }
+.tabs button:hover { color: var(--ink); }
+.tabs button.active { color: var(--ink); }
+.tabs button.active::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--accent); }
+
+/* ---------- Tabella ---------- */
+.tablecard { display: flex; flex-direction: column; min-height: 360px; }
+.tablebar { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.viewchip { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 11px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font-weight: 500; font-size: 13px; }
+.viewchip button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+.viewchip button:hover { background: rgba(66, 87, 214, .14); }
+.viewchip button svg { width: 13px; height: 13px; }
+.viewchip.plain { padding-right: 11px; }
+.search { position: relative; width: 240px; }
+.search svg { position: absolute; left: 9px; top: 8px; width: 15px; height: 15px; color: var(--muted); }
+.search input { height: 30px; padding-left: 30px; font-size: 13px; }
+.selactions { display: flex; align-items: center; gap: 6px; padding-left: 10px; border-left: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.tablewrap { flex: 1; overflow: auto; max-height: calc(100vh - 210px); }
+table.grid { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.grid th { position: sticky; top: 0; z-index: 1; background: #fbfbfa; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; user-select: none; }
+.grid th[data-sort] { cursor: pointer; }
+.grid th[data-sort]:hover { color: var(--ink); }
+.grid th.sorted { color: var(--ink); }
+.grid th.sorted::after { content: " ↑"; color: var(--accent); }
+.grid th.sorted.desc::after { content: " ↓"; }
+.grid td { padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.grid tbody tr { cursor: default; }
+.grid tbody tr:hover td { background: #fafaf8; }
+.grid tbody tr.sel td { background: var(--accent-soft); }
+.grid tbody tr.overdue td:nth-child(3) { color: var(--danger); font-weight: 600; }
+.grid .num { text-align: right; }
+.grid .chk { width: 40px; padding-right: 0; }
+.grid .act { width: 44px; text-align: right; padding: 4px 8px; }
+.grid td.intest { max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+.rowbtn { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; opacity: 0; }
+tr:hover .rowbtn, .rowbtn:focus { opacity: 1; }
+.rowbtn:hover { background: var(--hover); color: var(--ink); }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.Pagato { background: var(--ok-soft); color: var(--ok); }
+.pill.InAttesa { background: var(--wait-soft); color: var(--wait); }
+.pill.Annullato { background: var(--void-soft); color: var(--void); }
+.empty { padding: 60px 20px; text-align: center; color: var(--muted); }
+.tablefoot { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); background: #fbfbfa; border-radius: 0 0 var(--radius) var(--radius); }
+.tablefoot strong { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ---------- Avvio ---------- */
+.start { display: grid; place-items: start center; padding: 9vh 24px; }
+.start-inner { width: min(560px, 100%); display: flex; flex-direction: column; gap: 14px; }
+.start-inner p { margin: 0 0 6px; }
+.dbcards { display: flex; flex-direction: column; gap: 10px; }
+.dbcard { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color .12s, transform .12s; }
+.dbcard:hover { border-color: var(--accent); }
+.dbcard .ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); }
+.dbcard .nm { font-weight: 600; font-size: 15px; }
+.dbcard .pt { font-size: 12px; color: var(--muted); word-break: break-all; margin-top: 2px; }
+.dbcard.missing .ic { background: var(--danger-soft); color: var(--danger); }
+.dbcard .go { margin-left: auto; color: var(--muted); }
+.start .btn.ghost { align-self: flex-start; }
+
+/* ---------- Dialog ---------- */
+.dlg { width: min(720px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-lg); color: var(--ink); }
+.dlg.small { width: min(420px, calc(100vw - 32px)); }
+.dlg.wide { width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+.dlg::backdrop { background: rgba(28, 30, 36, .28); backdrop-filter: blur(2px); }
+.dlg h2 { margin-bottom: 4px; }
+.dlg p { color: var(--ink-2); line-height: 1.5; white-space: pre-line; }
+.dlg-actions { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; }
+.dlg-foot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dblist { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.dbrow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.dbrow:last-child { border-bottom: 0; }
+.dbrow .info { flex: 1; min-width: 0; }
+.dbrow .nm { font-weight: 600; }
+.dbrow .pt { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbrow .badge { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; background: var(--ok-soft); color: var(--ok); }
+.dbrow .badge.ko { background: var(--danger-soft); color: var(--danger); }
+.dbrow .iconbtn { width: 30px; height: 30px; }
+.dbrow .iconbtn svg { width: 16px; height: 16px; }
+.dblist .none { padding: 16px; color: var(--muted); text-align: center; }
+.dbform { margin-top: 4px; padding: 16px; background: #fbfbfa; border: 1px dashed var(--line-2); border-radius: var(--radius); }
+.dbform h3 { margin: 0; }
+.testres { font-size: 13px; }
+.testres.ok { color: var(--ok); }
+.testres.ko { color: var(--danger); }
+
+/* ---------- Toast ---------- */
+.toasts { position: fixed; right: 20px; bottom: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.toast { max-width: 440px; padding: 11px 14px; border-radius: 10px; background: #23262b; color: #fff; font-size: 13.5px; box-shadow: var(--shadow-lg); animation: tin .18s ease-out; line-height: 1.4; }
+.toast.err { background: var(--danger); }
+@keyframes tin { from { opacity: 0; transform: translateY(6px); } }
+
+#printArea { display: none; }
+
+@media (max-width: 1100px) {
+  .stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---------- Stampa ---------- */
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  body { background: #fff; }
+  body > *:not(#printArea) { display: none !important; }
+  #printArea { display: block; font-size: 10.5pt; color: #000; }
+  #printArea .ph { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5pt solid #000; padding-bottom: 6pt; margin-bottom: 4pt; }
+  #printArea .ph h1 { font-size: 14pt; }
+  #printArea .tot { display: flex; justify-content: space-between; padding: 4pt 0 8pt; border-bottom: .5pt solid #888; margin-bottom: 8pt; font-weight: 600; }
+  #printArea table { width: 100%; border-collapse: collapse; }
+  #printArea th { text-align: left; font-size: 9pt; border-bottom: 1pt solid #000; padding: 4pt 5pt; background: #eee; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #printArea td { padding: 3.5pt 5pt; border-bottom: .4pt solid #ccc; }
+  #printArea tr { break-inside: avoid; }
+  #printArea .num { text-align: right; }
+  #printArea thead { display: table-header-group; }
+  #printArea tfoot td { font-weight: 700; border-top: 1pt solid #000; border-bottom: 0; }
+}
+
+/* Form nei dialog: colonne fisse */
+.grid-form > h2, .grid-form > h3 { grid-column: 1 / -1 !important; }
+.dlg .grid-form { grid-template-columns: repeat(3, 1fr); }
+.dlg #formGen { grid-template-columns: repeat(4, 1fr); }
+.dlg .dlg-actions.wide { grid-column: 1 / -1; }
+
+/* ---------- Stato file ---------- */
+.filestat { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 6px 0 11px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); max-width: 420px; }
+.filestat .fs-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+.filestat.dirty .fs-dot { background: var(--wait); }
+.filestat.err .fs-dot { background: var(--danger); }
+.filestat .fs-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filestat .btn { height: 24px; padding: 0 9px; font-size: 12px; border-radius: 99px; }
+.filestat.nobtn { padding-right: 11px; }
+
+/* ---------- Avvio ---------- */
+.start-actions { display: flex; flex-direction: column; gap: 10px; }
+.start-actions .btn { height: 44px; justify-content: flex-start; padding: 0 16px; font-size: 14.5px; }
+.start-actions .btn .sub { margin-left: auto; font-weight: 400; font-size: 12px; opacity: .75; }
+.start-actions .btn.primary .sub { color: #fff; }
+.start-sep { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; margin: 6px 0; }
+.start-sep::before, .start-sep::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.start-help { margin-top: 18px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+.start-help b { color: var(--ink); }
+.dbcard .cnt { margin-left: auto; color: var(--muted); font-size: 12.5px; white-space: nowrap; }
+.dbcard .cnt + .go { margin-left: 8px; }
+.filebox { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); }
+.filebox .info { flex: 1; min-width: 0; }
+.filebox .nm { font-weight: 600; }
+.filebox .pt { font-size: 12.5px; color: var(--muted); }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.dbrow .cnt { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 760px) {
+  :root { font-size: 15px; }
+  .topbar { padding: 0 12px; gap: 8px; height: 54px; }
+  .brand span:last-child { display: none; }
+  .dbbtn { max-width: 46vw; }
+  .dbbtn #dbName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .filestat .fs-txt { display: none; }
+  .filestat { padding: 0 4px 0 10px; }
+  .filestat.nobtn { padding-right: 10px; }
+  .main { padding: 12px 10px 30px; gap: 12px; }
+  .stats { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -10px; padding: 0 10px 2px; scrollbar-width: none; }
+  .stats .stat { flex: 0 0 auto; min-width: 46%; scroll-snap-align: start; }
+  .tools.collapsed { padding-bottom: 0; }
+  .tools.collapsed .tabs { margin-bottom: 0; border-bottom: 0; }
+  .tools.collapsed .tabs button.active::after { display: none; }
+  .tools.collapsed .tabs button.active { color: var(--muted); }
+  .tools.collapsed .tabpane { display: none !important; }
+  .stat { padding: 11px 12px; }
+  .stat .val { font-size: 17px; }
+  .tools { padding: 0 12px 14px; }
+  .tabs { margin: 0 -12px 14px; padding: 0 4px; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { white-space: nowrap; padding: 0 10px; }
+  .grid-form, .dlg .grid-form, .dlg #formGen { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-form .wide { grid-column: 1 / -1; }
+  .form-actions { grid-column: 1 / -1; }
+  .form-actions .btn { flex: 1; height: 42px; }
+  .presets { grid-column: 1 / -1; flex-wrap: wrap; }
+  input[type=text], input[type=date], input[type=number], input[type=search], select { height: 42px; font-size: 16px; }
+  .tablebar { padding: 10px; gap: 8px; }
+  .search { width: 100%; order: 5; }
+  .search input { height: 38px; font-size: 16px; }
+  .search svg { top: 11px; }
+  .selactions { border-left: 0; padding-left: 0; width: 100%; order: 6; }
+  .tablewrap { max-height: none; }
+  /* righe come schede */
+  table.grid thead { display: none; }
+  table.grid, .grid tbody { display: block; }
+  .grid tbody tr { display: grid; grid-template-columns: 30px 1fr auto; grid-template-areas: "chk intest importo" "chk num stato" "chk cassa act"; column-gap: 8px; row-gap: 2px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+  .grid tbody tr.sel { background: var(--accent-soft); }
+  .grid td { padding: 0; border: 0; background: none !important; }
+  .grid td.chk { grid-area: chk; padding-top: 2px; }
+  .grid td.c-valuta, .grid td.c-banca { display: none; }
+  .grid td.intest { grid-area: intest; font-weight: 600; max-width: none; white-space: normal; }
+  .grid td.num { grid-area: importo; font-weight: 600; }
+  .grid td.c-num { grid-area: num; color: var(--muted); font-size: 13px; }
+  .grid td.c-num::before { content: "N° "; }
+  .grid td.c-cassa { grid-area: cassa; color: var(--muted); font-size: 13px; }
+  .grid td.c-cassa::before { content: "Cassa "; }
+  .grid td.c-stato { grid-area: stato; justify-self: end; }
+  .grid td.act { grid-area: act; width: auto; padding: 0; justify-self: end; }
+  .rowbtn { opacity: 1; width: 32px; height: 26px; }
+  .grid tbody tr.overdue td.c-cassa { color: var(--danger); font-weight: 600; }
+  .tablefoot { flex-wrap: wrap; }
+  .dlg, .dlg.wide, .dlg.small { width: calc(100vw - 16px); max-width: none; padding: 18px 16px; }
+  .dbrow { flex-wrap: wrap; }
+  .dbrow .info { flex-basis: 100%; }
+  .toasts { left: 12px; right: 12px; bottom: 12px; align-items: stretch; }
+}
+
+/* App installata (iPhone/Android): rispetta la barra di stato */
+.topbar { padding-top: env(safe-area-inset-top, 0px); height: calc(56px + env(safe-area-inset-top, 0px)); }
+@media (max-width: 760px) { .topbar { height: calc(54px + env(safe-area-inset-top, 0px)); } .toasts { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); } }
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 14.5h5M6 11h3M14.5 14.5h3.5"/></svg></span>
+    <span>Gestione Assegni</span>
+  </div>
+  <div class="dbswitch" id="dbSwitch" hidden>
+    <button class="dbbtn" id="dbBtn" aria-haspopup="menu"><span class="dot"></span><span id="dbName">—</span><svg class="chev" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></svg></button>
+    <div class="menu" id="dbMenu" role="menu" hidden></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="filestat" id="fileStat" hidden><span class="fs-dot"></span><span class="fs-txt" id="fileStatTxt"></span><button class="btn primary" id="fileStatBtn" hidden></button></div>
+  <button class="iconbtn" id="btnSettings" title="Impostazioni, archivi e file dati"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<!-- Avvio: apertura file dati -->
+<main id="startView" class="start" hidden>
+  <div class="start-inner">
+    <h1>Apri i dati degli assegni</h1>
+    <p class="muted">Seleziona il file <b>.json</b> creato dal Convertitore (es. dalla cartella OneDrive o Google Drive).</p>
+    <div class="start-actions">
+      <button class="btn" id="btnReopen" hidden><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg>Riapri <span id="reopenName"></span><span class="sub">ultimo file usato</span></button>
+      <button class="btn primary" id="btnOpen"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Apri file dati (.json)…</button>
+      <button class="btn" id="btnCache" hidden><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Continua con la copia locale<span class="sub" id="cacheInfo"></span></button>
+      <div class="start-sep">oppure</div>
+      <button class="btn ghost" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Inizia un archivio vuoto</button>
+    </div>
+    <div class="start-help" id="startHelp"></div>
+    <input type="file" id="fileInput" accept=".json,application/json" hidden>
+  </div>
+</main>
+
+<!-- Scelta archivio -->
+<main id="archView" class="start" hidden>
+  <div class="start-inner">
+    <h1>Seleziona un archivio</h1>
+    <p class="muted" id="archNote"></p>
+    <div class="dbcards" id="dbCards"></div>
+  </div>
+</main>
+
+<!-- Schermata principale -->
+<main id="mainView" class="main" hidden>
+  <section class="stats" id="stats"></section>
+
+  <section class="card tools">
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="nuovo" class="active">Nuovo assegno</button>
+      <button role="tab" data-tab="filtri">Filtri</button>
+      <button role="tab" data-tab="periodo">Report periodo</button>
+      <button role="tab" data-tab="scadenze">Scadenze</button>
+    </nav>
+
+    <form class="tabpane grid-form" data-pane="nuovo" id="formNuovo" autocomplete="off">
+      <label>Data valuta<input type="date" name="DataValuta" required></label>
+      <label>Data cassa<input type="date" name="DataCassa" required></label>
+      <label>Importo €<input type="text" name="Importo" inputmode="decimal" placeholder="0,00" required></label>
+      <label>Banca<input type="text" name="Banca"></label>
+      <label class="wide">Intestatario<input type="text" name="Intestatario" list="listaIntestatari" required></label>
+      <label>N° assegno<input type="text" name="NumAssegno" inputmode="numeric" required></label>
+      <label>Stato<select name="Stato"><option>In Attesa</option><option>Pagato</option><option>Annullato</option></select></label>
+      <div class="form-actions"><button class="btn primary" type="submit">Inserisci</button></div>
+    </form>
+
+    <form class="tabpane grid-form" data-pane="filtri" id="formFiltri" hidden autocomplete="off">
+      <label>Importo<input type="text" name="importo" inputmode="decimal" placeholder="contiene…"></label>
+      <label class="wide">Intestatario<input type="text" name="intestatario" list="listaIntestatari" placeholder="contiene…"></label>
+      <label>N° assegno<input type="text" name="numero" inputmode="numeric" placeholder="contiene…"></label>
+      <label>Stato<select name="stato"><option value="">Tutti</option><option>Pagato</option><option>In Attesa</option><option>Annullato</option></select></label>
+      <label>Anno (data cassa)<select name="anno" id="selAnno"><option value="">Tutti</option></select></label>
+      <div class="form-actions"><button class="btn" type="reset">Azzera</button></div>
+    </form>
+
+    <form class="tabpane grid-form" data-pane="periodo" id="formPeriodo" hidden>
+      <label>Data cassa dal<input type="date" name="dal" required></label>
+      <label>al<input type="date" name="al" required></label>
+      <label>Stato<select name="stato"><option value="">Tutti</option><option>Pagato</option><option>In Attesa</option><option>Annullato</option></select></label>
+      <div class="presets">
+        <button type="button" class="chip" data-preset="mese">Questo mese</button>
+        <button type="button" class="chip" data-preset="mesePrec">Mese scorso</button>
+        <button type="button" class="chip" data-preset="anno">Quest'anno</button>
+      </div>
+      <div class="form-actions"><button class="btn primary" type="submit">Cerca</button></div>
+    </form>
+
+    <form class="tabpane grid-form" data-pane="scadenze" id="formScadenze" hidden>
+      <label>Data inizio<input type="date" name="dal" required></label>
+      <label>N° giorni<input type="number" name="giorni" min="0" max="3650" required></label>
+      <p class="hint wide">Mostra gli assegni <b>In Attesa</b> con data cassa entro il periodo, più quelli già scaduti.</p>
+      <div class="form-actions"><button class="btn primary" type="submit">Cerca</button></div>
+    </form>
+  </section>
+
+  <section class="card tablecard">
+    <div class="tablebar">
+      <div class="viewchip" id="viewChip"></div>
+      <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg><input type="search" id="quickSearch" placeholder="Cerca nella vista…"></div>
+      <div class="selactions" id="selActions" hidden>
+        <span id="selCount"></span>
+        <button class="btn sm" id="btnPagati">Imposta come pagati</button>
+        <button class="btn sm danger-ghost" id="btnElimina">Elimina</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn sm ghost" id="btnCsv" title="Esporta CSV">CSV</button>
+      <button class="btn sm ghost" id="btnXlsx" title="Esporta Excel">Excel</button>
+      <button class="btn sm" id="btnStampa"><svg viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z"/></svg>Stampa</button>
+    </div>
+    <div class="tablewrap">
+      <table class="grid" id="grid">
+        <thead><tr>
+          <th class="chk"><input type="checkbox" id="chkAll" aria-label="Seleziona tutti"></th>
+          <th data-sort="DataValuta">Data valuta</th>
+          <th data-sort="DataCassa">Data cassa</th>
+          <th data-sort="Importo" class="num">Importo</th>
+          <th data-sort="Banca">Banca</th>
+          <th data-sort="Intestatario">Intestatario</th>
+          <th data-sort="NumAssegno">N° assegno</th>
+          <th data-sort="Stato">Stato</th>
+          <th class="act"></th>
+        </tr></thead>
+        <tbody id="gridBody"></tbody>
+      </table>
+      <div class="empty" id="gridEmpty" hidden>Nessun assegno da visualizzare.</div>
+    </div>
+    <div class="tablefoot"><span id="footCount"></span><span class="spacer"></span><span>Importo assegni visualizzati</span><strong id="footTotal"></strong></div>
+  </section>
+</main>
+
+<datalist id="listaIntestatari"></datalist>
+
+<!-- Menu contestuale riga -->
+<div class="menu ctx" id="ctxMenu" hidden>
+  <button data-act="modifica">Modifica…</button>
+  <hr>
+  <button data-act="Pagato">Segna come Pagato</button>
+  <button data-act="In Attesa">Segna In Attesa</button>
+  <button data-act="Annullato">Segna Annullato</button>
+  <hr>
+  <button data-act="elimina" class="danger">Elimina</button>
+</div>
+
+<!-- Modale modifica -->
+<dialog id="dlgModifica" class="dlg">
+  <form method="dialog" id="formModifica" class="grid-form" autocomplete="off">
+    <h2>Modifica assegno <span class="muted" id="modTitle"></span></h2>
+    <label>Data valuta<input type="date" name="DataValuta" required></label>
+    <label>Data cassa<input type="date" name="DataCassa" required></label>
+    <label>Importo €<input type="text" name="Importo" inputmode="decimal" required></label>
+    <label>Banca<input type="text" name="Banca"></label>
+    <label class="wide">Intestatario<input type="text" name="Intestatario" list="listaIntestatari" required></label>
+    <label>N° assegno<input type="text" name="NumAssegno" inputmode="numeric" required></label>
+    <label>Stato<select name="Stato"><option>Pagato</option><option>In Attesa</option><option>Annullato</option></select></label>
+    <div class="dlg-actions wide">
+      <button type="button" class="btn danger-ghost" id="modElimina">Elimina</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="modAnnulla">Annulla</button>
+      <button type="submit" class="btn primary" id="modSalva">Salva</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Modale conferma -->
+<dialog id="dlgConferma" class="dlg small">
+  <form method="dialog">
+    <h2 id="confTitle">Conferma</h2>
+    <p id="confText"></p>
+    <div class="dlg-actions"><span class="spacer"></span><button class="btn" value="no" id="confNo">Annulla</button><button class="btn primary" value="si" id="confOk">Conferma</button></div>
+  </form>
+</dialog>
+
+<!-- Modale richiesta testo -->
+<dialog id="dlgPrompt" class="dlg small">
+  <form method="dialog" id="formPrompt">
+    <h2 id="promptTitle"></h2>
+    <p><label><span id="promptLabel"></span><input type="text" name="v" required></label></p>
+    <div class="dlg-actions"><span class="spacer"></span><button class="btn" value="no" formnovalidate>Annulla</button><button class="btn primary" value="si">OK</button></div>
+  </form>
+</dialog>
+
+<!-- Modale impostazioni -->
+<dialog id="dlgSettings" class="dlg wide">
+  <div class="dlg-head"><h2>Impostazioni</h2><button class="iconbtn" id="setClose" title="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+
+  <h3>File dati</h3>
+  <div class="filebox">
+    <div class="info"><div class="nm" id="setFileName"></div><div class="pt" id="setFileInfo"></div></div>
+  </div>
+  <div class="btnrow">
+    <button class="btn primary" id="setSave">Salva ora</button>
+    <button class="btn" id="setSaveAs">Salva con nome…</button>
+    <button class="btn" id="setExport">Scarica copia .json</button>
+    <button class="btn" id="setOpen">Apri altro file…</button>
+    <span class="spacer"></span>
+    <button class="btn danger-ghost" id="setCloseFile">Chiudi file</button>
+  </div>
+
+  <h3>Archivi nel file</h3>
+  <div id="archList" class="dblist"></div>
+  <div class="btnrow"><button class="btn" id="btnNewArch"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nuovo archivio vuoto</button></div>
+
+  <h3>Generali</h3>
+  <form id="formGen" class="grid-form">
+    <label>Banca predefinita<input type="text" name="bancaPredefinita"></label>
+    <label>Giorni scadenza predefiniti<input type="number" min="1" name="giorniScadenza"></label>
+    <div class="form-actions wide"><span class="spacer"></span><button class="btn primary" type="submit">Salva impostazioni</button></div>
+  </form>
+  <div class="dlg-foot"><span class="muted small">Gestione Assegni 2.0 · web app offline</span></div>
+</dialog>
+
+<div id="printArea"></div>
+<div class="toasts" id="toasts"></div>
+<script>
+'use strict';
+/* Gestione Assegni – web app offline in un unico file HTML.
+   I dati stanno in un file JSON (creato dal Convertitore Access → JSON) che si apre e si salva dal browser.
+   Copia di sicurezza automatica nella memoria del browser. */
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const STATI = ['Pagato', 'In Attesa', 'Annullato'];
+const FORMATO = 'gestione-assegni';
+const HAS_FS = typeof window.showOpenFilePicker === 'function';
+const isMobile = () => matchMedia('(max-width: 760px)').matches;
+
+/* ---------------- Stato ---------------- */
+const F = {            // file dati
+  data: null,          // { formato, versione, generato, modificato, impostazioni, archivi:[{id,nome,origine,assegni:[]}] }
+  handle: null,        // FileSystemFileHandle (Chrome/Edge su PC)
+  name: '',
+  lastMod: null,       // lastModified del file all'ultima lettura/scrittura
+  dirty: false,        // modifiche non ancora scritte nel file
+  error: '',
+  savedAt: null,
+};
+const S = {            // interfaccia
+  arch: null, rows: [], view: { tipo: 'tutti' }, sort: { key: 'ID', dir: -1 },
+  sel: new Set(), q: '', visible: [], lastClicked: null,
+};
+const imp = () => F.data.impostazioni;
+
+/* ---------------- Utilità ---------------- */
+const pad = n => String(n).padStart(2, '0');
+const toIso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const today = () => toIso(new Date());
+function addDays(iso, n) { const [y, m, d] = iso.split('-').map(Number); return toIso(new Date(y, m - 1, d + n)); }
+const fmtDate = iso => iso ? iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4) : '';
+const hhmm = d => pad(d.getHours()) + ':' + pad(d.getMinutes());
+let nf;
+try { nf = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', useGrouping: 'always' }); nf.format(1000); }
+catch { nf = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }); }
+const eur = v => nf.format(v || 0);
+const num2 = v => (Math.round((v || 0) * 100) / 100).toFixed(2).replace('.', ',');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const uid = () => Math.random().toString(16).slice(2, 10);
+function parseImporto(s) {
+  s = String(s || '').replace(/[\s€]/g, '');
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) return NaN;
+  return parseFloat(s);
+}
+const stCls = s => (s || '').replace(/\s/g, '');
+
+function toast(msg, err) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (err ? ' err' : '');
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(() => t.remove(), err ? 6500 : 3200);
+}
+
+function confirmBox(title, text, okLabel = 'Conferma', danger = false, noLabel = 'Annulla') {
+  const d = $('#dlgConferma');
+  $('#confTitle').textContent = title;
+  $('#confText').textContent = text;
+  const ok = $('#confOk');
+  ok.textContent = okLabel;
+  $('#confNo').textContent = noLabel;
+  ok.style.background = danger ? 'var(--danger)' : '';
+  ok.style.borderColor = danger ? 'var(--danger)' : '';
+  d.returnValue = '';
+  d.showModal();
+  ok.focus();
+  return new Promise(r => d.addEventListener('close', () => r(d.returnValue === 'si'), { once: true }));
+}
+
+function promptBox(title, label, value = '') {
+  const d = $('#dlgPrompt'), f = $('#formPrompt');
+  $('#promptTitle').textContent = title;
+  $('#promptLabel').textContent = label;
+  f.v.value = value;
+  d.returnValue = '';
+  d.showModal();
+  f.v.select();
+  return new Promise(r => d.addEventListener('close', () => r(d.returnValue === 'si' ? f.v.value.trim() : null), { once: true }));
+}
+
+/* ---------------- Memoria locale (IndexedDB, con ripiego su localStorage) ---------------- */
+const KV = (() => {
+  let dbp = null;
+  function db() {
+    if (!dbp) dbp = new Promise((res, rej) => {
+      try {
+        const r = indexedDB.open('gestione-assegni', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      } catch (e) { rej(e); }
+    });
+    return dbp;
+  }
+  async function tx(mode, fn) {
+    const d = await db();
+    return new Promise((res, rej) => {
+      const t = d.transaction('kv', mode), st = t.objectStore('kv');
+      const r = fn(st);
+      t.oncomplete = () => res(r && r.result);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  return {
+    async get(k) {
+      try { return await tx('readonly', s => s.get(k)); }
+      catch { try { const v = localStorage.getItem('ga:' + k); return v ? JSON.parse(v) : undefined; } catch { return undefined; } }
+    },
+    async set(k, v) {
+      try { await tx('readwrite', s => s.put(v, k)); }
+      catch { try { if (!(v instanceof Object && 'kind' in v)) localStorage.setItem('ga:' + k, JSON.stringify(v)); } catch { } }
+    },
+    async del(k) {
+      try { await tx('readwrite', s => s.delete(k)); } catch { }
+      try { localStorage.removeItem('ga:' + k); } catch { }
+    },
+  };
+})();
+
+/* ---------------- Formato dati ---------------- */
+function normalizeData(o) {
+  if (Array.isArray(o)) o = { archivi: [{ nome: 'Assegni', assegni: o }] };   // elenco semplice di assegni
+  if (!o || typeof o !== 'object' || !Array.isArray(o.archivi)) throw new Error('Il file non è un file dati di Gestione Assegni.');
+  if (o.formato && o.formato !== FORMATO) throw new Error('Formato file non riconosciuto: ' + o.formato);
+  const data = {
+    formato: FORMATO, versione: 1,
+    generato: o.generato || null, modificato: o.modificato || null,
+    impostazioni: Object.assign({ bancaPredefinita: 'BCCP', giorniScadenza: 6 }, o.impostazioni || {}),
+    archivi: [],
+  };
+  data.impostazioni.giorniScadenza = parseInt(data.impostazioni.giorniScadenza, 10) || 6;
+  const ids = new Set();
+  for (const a of o.archivi) {
+    let id = String(a.id || uid());
+    while (ids.has(id)) id = uid();
+    ids.add(id);
+    let next = 1;
+    const assegni = (a.assegni || []).map(r => {
+      let ID = parseInt(r.ID, 10);
+      if (!(ID > 0)) ID = 0;
+      return {
+        ID,
+        DataValuta: String(r.DataValuta || '').slice(0, 10),
+        DataCassa: String(r.DataCassa || '').slice(0, 10),
+        Importo: typeof r.Importo === 'number' ? r.Importo : (parseImporto(r.Importo) || 0),
+        Banca: r.Banca == null ? '' : String(r.Banca),
+        Intestatario: r.Intestatario == null ? '' : String(r.Intestatario),
+        NumAssegno: r.NumAssegno == null ? '' : String(r.NumAssegno),
+        Stato: r.Stato == null ? '' : String(r.Stato),
+      };
+    });
+    assegni.forEach(r => { if (r.ID >= next) next = r.ID + 1; });
+    assegni.forEach(r => { if (!r.ID) r.ID = next++; });
+    data.archivi.push({ id, nome: String(a.nome || 'Archivio'), origine: a.origine || '', assegni });
+  }
+  return data;
+}
+
+function serialize() {
+  // un assegno per riga: file compatto ma leggibile
+  const d = F.data;
+  const head = { formato: d.formato, versione: d.versione, generato: d.generato, modificato: d.modificato, impostazioni: d.impostazioni };
+  let s = JSON.stringify(head, null, 2).replace(/\n}$/, ',\n  "archivi": [\n');
+  s += d.archivi.map(a => '    {\n      "id": ' + JSON.stringify(a.id) + ',\n      "nome": ' + JSON.stringify(a.nome) + ',\n      "origine": ' + JSON.stringify(a.origine || '') +
+    ',\n      "assegni": [' + (a.assegni.length ? '\n' + a.assegni.map(r => '        ' + JSON.stringify(r)).join(',\n') + '\n      ' : '') + ']\n    }').join(',\n');
+  return s + '\n  ]\n}\n';
+}
+
+/* ---------------- Apertura / salvataggio file ---------------- */
+async function setLoaded(data, src) {
+  F.data = data;
+  F.handle = src.handle || null;
+  F.name = src.name || 'assegni.json';
+  F.lastMod = src.lastMod || null;
+  F.dirty = !!src.dirty;
+  F.error = '';
+  F.savedAt = src.savedAt || null;
+  F.needPerm = !!src.needPerm;
+  try { localStorage.removeItem('ga:noAuto'); } catch { }
+  await cacheSave();
+  if (F.handle) await KV.set('handle', F.handle);
+  updateFileStat();
+  chooseArchive();
+}
+
+async function readFromHandle(h) {
+  const f = await h.getFile();
+  const data = normalizeData(JSON.parse(await f.text()));
+  return { data, lastMod: f.lastModified, name: f.name };
+}
+
+async function openFile() {
+  if (F.dirty && !await confirmBox('Modifiche non salvate', 'Ci sono modifiche non ancora salvate nel file attuale (restano comunque nella copia locale). Aprire un altro file?', 'Apri altro file')) return;
+  if (HAS_FS) {
+    let h;
+    try {
+      [h] = await window.showOpenFilePicker({ types: [{ description: 'Dati Gestione Assegni', accept: { 'application/json': ['.json'] } }], excludeAcceptAllOption: false });
+    } catch (e) { if (e.name !== 'AbortError') toast(e.message, true); return; }
+    try { await h.requestPermission({ mode: 'readwrite' }); } catch { }
+    try {
+      const r = await readFromHandle(h);
+      await setLoaded(r.data, { handle: h, name: r.name, lastMod: r.lastMod });
+      toast('Aperto ' + r.name);
+    } catch (e) { toast('Impossibile aprire il file: ' + e.message, true); }
+  } else {
+    $('#fileInput').value = '';
+    $('#fileInput').click();
+  }
+}
+
+$('#fileInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = normalizeData(JSON.parse(await f.text()));
+    await setLoaded(data, { name: f.name });
+    toast('Aperto ' + f.name);
+  } catch (err) { toast('Impossibile aprire il file: ' + err.message, true); }
+});
+
+async function reopenLast() {
+  const h = await KV.get('handle');
+  if (!h) return;
+  try {
+    if ((await h.queryPermission({ mode: 'readwrite' })) !== 'granted' && (await h.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+      if ((await h.queryPermission({ mode: 'read' })) !== 'granted') throw new Error('Permesso negato');
+    }
+    const r = await readFromHandle(h);
+    // se la copia locale ha modifiche non salvate di questo stesso file, chiedi quale tenere
+    const c = await KV.get('cache');
+    if (c && c.dirty && c.name === r.name && c.data && c.data.modificato && (!r.data.modificato || c.data.modificato > r.data.modificato)) {
+      if (await confirmBox('Modifiche non salvate', `La copia locale contiene modifiche non salvate in ${r.name} (${new Date(c.data.modificato).toLocaleString('it-IT')}). Recuperarle e salvarle nel file?`, 'Recupera e salva', false, 'Usa il file')) {
+        await setLoaded(normalizeData(c.data), { handle: h, name: r.name, lastMod: r.lastMod, dirty: true });
+        return saveNow();
+      }
+    }
+    await setLoaded(r.data, { handle: h, name: r.name, lastMod: r.lastMod });
+  } catch (e) {
+    toast('Impossibile riaprire il file (' + e.message + '). Usa "Apri file dati".', true);
+  }
+}
+
+async function cacheSave() {
+  await KV.set('cache', { name: F.name, data: F.data, dirty: F.dirty, savedAt: Date.now(), fileMod: F.lastMod });
+}
+
+let saveTimer = null, saving = false;
+function commit() {
+  F.data.modificato = new Date().toISOString();
+  F.dirty = true;
+  cacheSave();
+  if (F.handle && !F.needPerm) { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveNow(true), 350); }
+  updateFileStat();
+}
+
+/* Ricollega il file riaperto automaticamente (il browser può chiedere di nuovo il permesso di modifica). */
+async function connectHandle(interactive) {
+  const h = F.handle;
+  if (!h) return false;
+  try {
+    let perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      if (!interactive) return false;
+      perm = await h.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') { updateFileStat(); return false; }
+    }
+    F.needPerm = false;
+    const f = await h.getFile();
+    if (F.lastMod && f.lastModified === F.lastMod) {
+      // il file non è cambiato: se c'erano modifiche locali le salva
+      updateFileStat();
+      if (F.dirty) await saveNow(true);
+      return true;
+    }
+    const r = await readFromHandle(h);
+    if (F.dirty) {
+      const keep = await confirmBox('Modifiche da salvare',
+        `In questo browser ci sono modifiche non ancora salvate, ma nel frattempo anche ${r.name} è cambiato (es. da un altro dispositivo).\n\nTenere i dati che vedi qui (sovrascrive il file) oppure usare il contenuto del file?`,
+        'Tieni questi dati', true, 'Usa il file');
+      if (keep) { F.lastMod = r.lastMod; await saveNow(); return true; }
+    }
+    const keepArch = S.arch && S.arch.id;
+    await setLoaded(r.data, { handle: h, name: r.name, lastMod: r.lastMod });
+    if (keepArch && F.data.archivi.some(a => a.id === keepArch) && (!S.arch || S.arch.id !== keepArch)) openArchive(keepArch);
+    return true;
+  } catch (e) {
+    F.error = 'impossibile leggere il file (' + e.message + ')';
+    updateFileStat();
+    return false;
+  }
+}
+
+// Al primo clic/tasto dopo la riapertura automatica chiede il permesso e ricollega il file
+function armReconnect() {
+  const go = () => {
+    document.removeEventListener('pointerdown', go, true);
+    document.removeEventListener('keydown', go, true);
+    if (F.needPerm) connectHandle(true);
+  };
+  document.addEventListener('pointerdown', go, true);
+  document.addEventListener('keydown', go, true);
+}
+
+async function saveNow(auto) {
+  if (!F.data) return;
+  if (!F.handle) return downloadJson();
+  if (F.needPerm) { if (!auto) await connectHandle(true); return; }
+  if (saving) { clearTimeout(saveTimer); saveTimer = setTimeout(() => saveNow(auto), 300); return; }
+  saving = true;
+  try {
+    let perm = await F.handle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      if (auto) { F.error = 'Serve il permesso per salvare'; updateFileStat(); return; }
+      perm = await F.handle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') throw new Error('Permesso di scrittura negato');
+    }
+    // il file è stato cambiato da un altro programma / dispositivo?
+    const cur = await F.handle.getFile();
+    if (F.lastMod && cur.lastModified !== F.lastMod) {
+      saving = false;
+      const over = await confirmBox('File modificato altrove',
+        `${F.name} è stato modificato da un altro programma o dispositivo (ad es. il Convertitore o la sincronizzazione di OneDrive/Drive) dopo che lo hai aperto.\n\nSovrascriverlo con i dati che vedi qui, oppure ricaricarlo perdendo le modifiche fatte qui?`,
+        'Sovrascrivi', true, 'Ricarica il file');
+      if (!over) { await reloadFromFile(); return; }
+      saving = true;
+    }
+    const w = await F.handle.createWritable();
+    await w.write(serialize());
+    await w.close();
+    const f = await F.handle.getFile();
+    F.lastMod = f.lastModified;
+    F.dirty = false; F.error = ''; F.savedAt = Date.now();
+    await cacheSave();
+  } catch (e) {
+    F.error = e.message || 'Errore di salvataggio';
+    if (!auto) toast('Salvataggio non riuscito: ' + F.error, true);
+  } finally {
+    saving = false;
+    updateFileStat();
+  }
+}
+
+async function saveAs() {
+  if (!window.showSaveFilePicker) return downloadJson();
+  let h;
+  try {
+    h = await window.showSaveFilePicker({ suggestedName: F.name || 'assegni.json', types: [{ description: 'Dati Gestione Assegni', accept: { 'application/json': ['.json'] } }] });
+  } catch (e) { if (e.name !== 'AbortError') toast(e.message, true); return; }
+  F.handle = h; F.name = h.name; F.lastMod = null;
+  await KV.set('handle', h);
+  await saveNow();
+  if (!F.dirty) toast('Salvato in ' + h.name);
+}
+
+async function downloadJson() {
+  const name = F.name || 'assegni.json';
+  const blob = new Blob([serialize()], { type: 'application/json' });
+  let shared = false;
+  // Su telefono: foglio di condivisione (Salva su File / OneDrive / Drive…), più comodo del download
+  if (isMobile() && navigator.canShare) {
+    try {
+      const file = new File([blob], name, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: name });
+        shared = true;
+      }
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  if (!shared) download(blob, name);
+  if (!F.handle) { F.dirty = false; F.savedAt = Date.now(); cacheSave(); updateFileStat(); }
+  toast(shared ? 'File ' + name + ' condiviso. Salvalo su OneDrive/Drive al posto del vecchio.' : 'File ' + name + ' scaricato. Caricalo su OneDrive/Drive per averlo anche sugli altri dispositivi.');
+}
+
+async function reloadFromFile() {
+  if (!F.handle) return;
+  try {
+    const r = await readFromHandle(F.handle);
+    const keepArch = S.arch && S.arch.id;
+    await setLoaded(r.data, { handle: F.handle, name: r.name, lastMod: r.lastMod });
+    if (keepArch && F.data.archivi.some(a => a.id === keepArch)) openArchive(keepArch);
+    toast('Dati ricaricati da ' + r.name);
+  } catch (e) { toast('Impossibile ricaricare: ' + e.message, true); }
+}
+
+// Quando torni sulla finestra: se il file è cambiato altrove e qui non ci sono modifiche, ricarica
+async function checkExternal() {
+  if (!F.handle || F.needPerm || F.dirty || saving || document.querySelector('dialog[open]')) return;
+  try {
+    if ((await F.handle.queryPermission({ mode: 'read' })) !== 'granted') return;
+    const f = await F.handle.getFile();
+    if (F.lastMod && f.lastModified !== F.lastMod) await reloadFromFile();
+  } catch { }
+}
+window.addEventListener('focus', checkExternal);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkExternal(); });
+window.addEventListener('beforeunload', e => { if (F.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+function updateFileStat() {
+  const el = $('#fileStat'), txt = $('#fileStatTxt'), btn = $('#fileStatBtn');
+  if (!F.data) { el.hidden = true; return; }
+  el.hidden = false;
+  el.className = 'filestat' + (F.error ? ' err' : F.dirty ? ' dirty' : '');
+  let t, b = '';
+  if (F.needPerm) { t = F.name + ' · clicca per ricollegare il file'; b = 'Collega'; el.className = 'filestat dirty'; }
+  else if (F.error) { t = F.name + ' · ' + F.error; b = 'Salva'; }
+  else if (F.handle) { t = F.dirty ? F.name + ' · salvataggio…' : F.name + (F.savedAt ? ' · salvato alle ' + hhmm(new Date(F.savedAt)) : ' · collegato'); }
+  else if (F.dirty) { t = F.name + ' · modifiche da scaricare'; b = 'Scarica'; }
+  else { t = F.name + ' · copia nel browser'; }
+  txt.textContent = t;
+  el.title = t;
+  btn.hidden = !b; btn.textContent = b;
+  el.classList.toggle('nobtn', !b);
+}
+$('#fileStatBtn').onclick = () => saveNow();
+
+/* ---------------- Avvio ---------------- */
+async function init() {
+  if (!window.isSecureContext && HAS_FS) { /* nessun problema: in file:// Chrome considera la pagina sicura */ }
+  const h = HAS_FS ? await KV.get('handle') : null;
+  const c = await KV.get('cache');
+  let noAuto = false;
+  try { noAuto = localStorage.getItem('ga:noAuto') === '1'; } catch { }
+  if (launchedByFile || F.data) return;
+  if (!noAuto) {
+    try {
+      if (h) {
+        // 1) permesso già concesso ("Consenti a ogni visita"): riapre direttamente il file
+        if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') { await reopenLast(); if (F.data) return; }
+        // 2) altrimenti apre subito l'ultima copia di quel file e lo ricollega al primo clic
+        if (c && c.data && c.name === h.name) {
+          await setLoaded(normalizeData(c.data), { handle: h, name: c.name, lastMod: c.fileMod || null, dirty: c.dirty, savedAt: c.savedAt, needPerm: true });
+          armReconnect();
+          return;
+        }
+      } else if (c && c.data) {
+        // telefono / browser senza accesso diretto ai file: riapre l'ultima copia di lavoro
+        await setLoaded(normalizeData(c.data), { name: c.name, dirty: c.dirty, savedAt: c.savedAt });
+        return;
+      }
+    } catch (e) { console.warn('Riapertura automatica non riuscita', e); }
+  }
+  showStart(h, c);
+}
+
+function showStart(h, c) {
+  S.arch = null;
+  $('#mainView').hidden = true; $('#archView').hidden = true; $('#startView').hidden = false;
+  $('#dbSwitch').hidden = true;
+  $('#btnReopen').hidden = !h;
+  if (h) $('#reopenName').textContent = h.name;
+  $('#btnCache').hidden = !(c && c.data);
+  if (c && c.data) $('#cacheInfo').textContent = (c.name || '') + (c.savedAt ? ' · ' + new Date(c.savedAt).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '') + (c.dirty ? ' · non salvata' : '');
+  $('#startHelp').innerHTML = HAS_FS
+    ? 'Le modifiche vengono <b>salvate direttamente nel file</b> che apri. Se il file è nella cartella di OneDrive o Google Drive del PC, si sincronizza da solo con il cloud.'
+    : 'Su questo browser il file viene <b>letto e poi riscaricato</b>: dopo le modifiche premi “Scarica” e ricarica il file su OneDrive/Drive. Nel frattempo i dati restano salvati in questo browser.';
+  updateFileStat();
+}
+
+$('#btnOpen').onclick = openFile;
+$('#btnReopen').onclick = reopenLast;
+$('#btnCache').onclick = async () => {
+  const c = await KV.get('cache');
+  if (!c) return;
+  try {
+    let h = null;
+    const hh = HAS_FS ? await KV.get('handle') : null;
+    if (hh && hh.name === c.name && (await hh.queryPermission({ mode: 'readwrite' })) === 'granted') h = hh;
+    await setLoaded(normalizeData(c.data), { name: c.name, dirty: c.dirty, handle: h, savedAt: c.savedAt });
+  } catch (e) { toast(e.message, true); }
+};
+$('#btnNew').onclick = async () => {
+  const nome = await promptBox('Nuovo archivio', 'Nome dell\'archivio', 'Assegni');
+  if (!nome) return;
+  const data = normalizeData({ archivi: [{ id: uid(), nome, assegni: [] }] });
+  await setLoaded(data, { name: 'assegni.json', dirty: true });
+};
+
+function chooseArchive() {
+  const arcs = F.data.archivi;
+  let last = null;
+  try { last = localStorage.getItem('ga:ultimoArchivio'); } catch { }
+  if (arcs.length === 0) { F.data.archivi.push({ id: uid(), nome: 'Assegni', origine: '', assegni: [] }); return openArchive(F.data.archivi[0].id); }
+  if (arcs.length === 1) return openArchive(arcs[0].id);
+  if (last && arcs.some(a => a.id === last)) return openArchive(last);
+  showArchives();
+}
+
+function showArchives() {
+  S.arch = null;
+  $('#mainView').hidden = true; $('#startView').hidden = true; $('#archView').hidden = false;
+  $('#dbSwitch').hidden = true;
+  $('#archNote').textContent = F.name + ' contiene ' + F.data.archivi.length + ' archivi.';
+  $('#dbCards').innerHTML = F.data.archivi.map(a => `
+    <button class="dbcard" data-id="${esc(a.id)}">
+      <span class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg></span>
+      <span><div class="nm">${esc(a.nome)}</div><div class="pt">${esc(a.origine || '')}</div></span>
+      <span class="cnt">${a.assegni.length} assegni</span>
+      <svg class="go" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+    </button>`).join('');
+  $$('#dbCards .dbcard').forEach(b => b.onclick = () => openArchive(b.dataset.id));
+}
+
+function openArchive(id) {
+  const a = F.data.archivi.find(x => x.id === id);
+  if (!a) return;
+  S.arch = a;
+  try { localStorage.setItem('ga:ultimoArchivio', id); } catch { }
+  S.sel.clear();
+  S.view = { tipo: 'tutti' };
+  S.q = '';
+  $('#quickSearch').value = '';
+  $('#formFiltri').reset();
+  $('#startView').hidden = true; $('#archView').hidden = true; $('#mainView').hidden = false;
+  $('#dbSwitch').hidden = false;
+  $('#dbName').textContent = a.nome;
+  document.title = 'Gestione Assegni · ' + a.nome;
+  resetNuovo(true);
+  $('.tools').classList.toggle('collapsed', isMobile());
+  const fs = $('#formScadenze');
+  fs.dal.value = today();
+  fs.giorni.value = imp().giorniScadenza;
+  if (!$('#formPeriodo').dal.value) setPreset('mese');
+  refresh();
+}
+
+/* Ricalcola elenchi derivati e ridisegna */
+function refresh() {
+  S.rows = S.arch.assegni;
+  const ids = new Set(S.rows.map(r => r.ID));
+  for (const id of [...S.sel]) if (!ids.has(id)) S.sel.delete(id);
+  const nomi = [...new Set(S.rows.map(r => r.Intestatario).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'));
+  $('#listaIntestatari').innerHTML = nomi.map(n => `<option value="${esc(n)}">`).join('');
+  const anni = [...new Set(S.rows.map(r => r.DataCassa && r.DataCassa.slice(0, 4)).filter(Boolean))].sort().reverse();
+  const sa = $('#selAnno'), cur = sa.value;
+  sa.innerHTML = '<option value="">Tutti</option>' + anni.map(a => `<option>${a}</option>`).join('');
+  sa.value = anni.includes(cur) ? cur : '';
+  render();
+}
+
+/* ---------------- Operazioni sui dati ---------------- */
+function nextId() { return S.arch.assegni.reduce((m, r) => Math.max(m, r.ID), 0) + 1; }
+function dbInsert(o) { const r = Object.assign({ ID: nextId() }, o); S.arch.assegni.push(r); commit(); return r; }
+function dbUpdate(id, o) { const r = S.arch.assegni.find(x => x.ID === id); if (!r) throw new Error('Assegno non trovato'); Object.assign(r, o); commit(); return r; }
+function dbSetStato(ids, stato) { let n = 0; const s = new Set(ids); S.arch.assegni.forEach(r => { if (s.has(r.ID)) { r.Stato = stato; n++; } }); commit(); return n; }
+function dbDelete(ids) { const s = new Set(ids), before = S.arch.assegni.length; S.arch.assegni = S.arch.assegni.filter(r => !s.has(r.ID)); commit(); return before - S.arch.assegni.length; }
+
+/* ---------------- Viste e filtri ---------------- */
+function applyView(rows) {
+  const v = S.view;
+  let out = rows;
+  if (v.tipo === 'filtri') {
+    const im = (v.importo || '').replace(/[\s€]/g, '');
+    const imA = im.replace(/\./g, '').replace(',', '.');
+    const intest = norm(v.intestatario);
+    out = out.filter(r => {
+      if (im) {
+        const a = String(r.Importo), b = r.Importo.toFixed(2);
+        if (!(a.includes(imA) || b.includes(imA) || a.includes(im) || b.replace('.', ',').includes(im))) return false;
+      }
+      if (intest && !norm(r.Intestatario).includes(intest)) return false;
+      if (v.numero && !String(r.NumAssegno).includes(v.numero)) return false;
+      if (v.stato && r.Stato !== v.stato) return false;
+      if (v.anno && (r.DataCassa || '').slice(0, 4) !== v.anno) return false;
+      return true;
+    });
+  } else if (v.tipo === 'periodo') {
+    out = out.filter(r => r.DataCassa >= v.dal && r.DataCassa <= v.al && (!v.stato || r.Stato === v.stato));
+  } else if (v.tipo === 'scadenze') {
+    const fine = addDays(v.dal, v.giorni);
+    out = out.filter(r => r.Stato === 'In Attesa' && r.DataCassa && r.DataCassa <= fine);
+  }
+  if (S.q) {
+    const q = norm(S.q);
+    out = out.filter(r => norm([fmtDate(r.DataValuta), fmtDate(r.DataCassa), num2(r.Importo), r.Banca, r.Intestatario, r.NumAssegno, r.Stato].join(' ')).includes(q));
+  }
+  const { key, dir } = S.sort;
+  const cmp = key === 'NumAssegno'
+    ? (a, b) => (a.NumAssegno.length - b.NumAssegno.length) || (a.NumAssegno < b.NumAssegno ? -1 : a.NumAssegno > b.NumAssegno ? 1 : 0)
+    : (key === 'Importo' || key === 'ID')
+      ? (a, b) => a[key] - b[key]
+      : (key === 'Banca' || key === 'Intestatario' || key === 'Stato')
+        ? (a, b) => String(a[key]).localeCompare(String(b[key]), 'it')
+        : (a, b) => (a[key] || '') < (b[key] || '') ? -1 : (a[key] || '') > (b[key] || '') ? 1 : 0;
+  return [...out].sort((a, b) => dir * cmp(a, b) || (b.ID - a.ID));
+}
+
+function viewTitle() {
+  const v = S.view;
+  if (v.tipo === 'periodo') return 'Report Assegni dal ' + fmtDate(v.dal) + ' al ' + fmtDate(v.al) + (v.stato ? ' · ' + v.stato : '');
+  if (v.tipo === 'scadenze') return 'Report Scadenze dal ' + fmtDate(v.dal) + ' al ' + fmtDate(addDays(v.dal, v.giorni));
+  return 'Report Assegni del ' + fmtDate(today());
+}
+
+function viewLabel() {
+  const v = S.view;
+  if (v.tipo === 'filtri') {
+    const p = [];
+    if (v.importo) p.push('Importo “' + v.importo + '”');
+    if (v.intestatario) p.push('Intestatario “' + v.intestatario + '”');
+    if (v.numero) p.push('N° “' + v.numero + '”');
+    if (v.stato) p.push(v.stato);
+    if (v.anno) p.push('Anno ' + v.anno);
+    return 'Filtri: ' + p.join(' · ');
+  }
+  if (v.tipo === 'periodo') return 'Periodo ' + fmtDate(v.dal) + ' – ' + fmtDate(v.al) + (v.stato ? ' · ' + v.stato : '');
+  if (v.tipo === 'scadenze') return 'In Attesa entro il ' + fmtDate(addDays(v.dal, v.giorni)) + ' (incl. scaduti)';
+  return 'Tutti gli assegni';
+}
+
+function setView(v) { S.view = v; render(); }
+
+/* ---------------- Rendering ---------------- */
+const ICON_DOTS = '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>';
+
+function render() {
+  if (!S.arch) return;
+  const list = applyView(S.rows);
+  S.visible = list;
+  const ref = S.view.tipo === 'scadenze' ? S.view.dal : today();
+  $('#gridBody').innerHTML = list.map(r => `
+    <tr data-id="${r.ID}" class="${S.sel.has(r.ID) ? 'sel' : ''}${r.Stato === 'In Attesa' && r.DataCassa < ref ? ' overdue' : ''}">
+      <td class="chk"><input type="checkbox" ${S.sel.has(r.ID) ? 'checked' : ''} aria-label="Seleziona"></td>
+      <td class="c-valuta">${fmtDate(r.DataValuta)}</td>
+      <td class="c-cassa">${fmtDate(r.DataCassa)}</td>
+      <td class="num">${eur(r.Importo)}</td>
+      <td class="c-banca">${esc(r.Banca)}</td>
+      <td class="intest" title="${esc(r.Intestatario)}">${esc(r.Intestatario) || '<span class="muted">—</span>'}</td>
+      <td class="c-num">${esc(r.NumAssegno)}</td>
+      <td class="c-stato"><span class="pill ${stCls(r.Stato)}">${esc(r.Stato)}</span></td>
+      <td class="act"><button class="rowbtn" title="Azioni">${ICON_DOTS}</button></td>
+    </tr>`).join('');
+  $('#gridEmpty').hidden = list.length > 0;
+
+  $$('#grid th[data-sort]').forEach(th => {
+    th.classList.toggle('sorted', th.dataset.sort === S.sort.key);
+    th.classList.toggle('desc', th.dataset.sort === S.sort.key && S.sort.dir < 0);
+  });
+
+  const tot = list.reduce((s, r) => s + r.Importo, 0);
+  $('#footCount').textContent = list.length + (list.length === 1 ? ' assegno' : ' assegni');
+  $('#footTotal').textContent = eur(tot);
+
+  const chip = $('#viewChip');
+  const plain = S.view.tipo === 'tutti';
+  chip.className = 'viewchip' + (plain ? ' plain' : '');
+  chip.innerHTML = esc(viewLabel()) + (plain ? '' : '<button title="Mostra tutti" id="chipX"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>');
+  if (!plain) $('#chipX').onclick = showAll;
+
+  renderStats(list);
+  renderSel();
+}
+
+function renderStats(list) {
+  const by = st => list.filter(r => r.Stato === st);
+  const sum = a => a.reduce((s, r) => s + r.Importo, 0);
+  const g = imp().giorniScadenza, oggi = today(), fine = addDays(oggi, g);
+  const att = S.rows.filter(r => r.Stato === 'In Attesa' && r.DataCassa && r.DataCassa <= fine);
+  const scaduti = att.filter(r => r.DataCassa < oggi);
+  const tiles = [
+    { k: 'tutti', lbl: 'Visualizzati', c: 'var(--accent)', val: eur(sum(list)), sub: list.length + ' assegni' },
+    { k: 'Pagato', lbl: 'Pagati', c: 'var(--ok)', a: by('Pagato') },
+    { k: 'In Attesa', lbl: 'In attesa', c: 'var(--wait)', a: by('In Attesa') },
+    { k: 'Annullato', lbl: 'Annullati', c: 'var(--void)', a: by('Annullato') },
+    { k: 'scad', lbl: 'In scadenza entro ' + g + ' gg', c: 'var(--danger)', val: eur(sum(att)), sub: att.length + ' assegni' + (scaduti.length ? ' · ' + scaduti.length + ' già scaduti' : ''), alert: scaduti.length > 0 },
+  ];
+  $('#stats').innerHTML = tiles.map(t => `
+    <button class="stat${t.alert ? ' alert' : ''}" data-k="${esc(t.k)}" title="${t.k === 'scad' ? 'Mostra scadenze' : t.k === 'tutti' ? 'Mostra tutti' : 'Filtra per stato'}">
+      <div class="lbl"><i style="background:${t.c}"></i>${esc(t.lbl)}</div>
+      <div class="val">${t.val ?? eur(sum(t.a))}</div>
+      <div class="sub">${t.sub ?? (t.a.length + ' assegni')}</div>
+    </button>`).join('');
+  $$('#stats .stat').forEach(b => b.onclick = () => {
+    const k = b.dataset.k;
+    if (k === 'tutti') return showAll();
+    if (k === 'scad') {
+      const f = $('#formScadenze'); f.dal.value = today(); f.giorni.value = g;
+      showTab('scadenze');
+      return setView({ tipo: 'scadenze', dal: today(), giorni: g });
+    }
+    const f = $('#formFiltri'); f.reset(); f.stato.value = k;
+    showTab('filtri');
+    readFiltri();
+  });
+}
+
+function renderSel() {
+  const n = S.sel.size;
+  $('#selActions').hidden = n === 0;
+  $('#selCount').textContent = n + (n === 1 ? ' selezionato' : ' selezionati');
+  const vis = S.visible.length, selVis = S.visible.filter(r => S.sel.has(r.ID)).length;
+  const all = $('#chkAll');
+  all.checked = vis > 0 && selVis === vis;
+  all.indeterminate = selVis > 0 && selVis < vis;
+}
+
+function showAll() {
+  $('#formFiltri').reset();
+  S.q = ''; $('#quickSearch').value = '';
+  setView({ tipo: 'tutti' });
+}
+
+/* ---------------- Tab strumenti ---------------- */
+function showTab(name) {
+  $('.tools').classList.remove('collapsed');
+  $$('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  $$('.tabpane').forEach(p => p.hidden = p.dataset.pane !== name);
+}
+$$('.tabs button').forEach(b => b.onclick = () => {
+  // su telefono il pannello si apre/chiude toccando la scheda attiva
+  if (isMobile() && b.classList.contains('active') && !$('.tools').classList.contains('collapsed')) { $('.tools').classList.add('collapsed'); return; }
+  showTab(b.dataset.tab);
+  if (b.dataset.tab === 'nuovo' && !isMobile()) setTimeout(() => $('#formNuovo').Importo.focus(), 0);
+});
+
+function resetNuovo(full) {
+  const f = $('#formNuovo');
+  f.Importo.value = ''; f.Intestatario.value = ''; f.NumAssegno.value = '';
+  f.Stato.value = 'In Attesa';
+  f.DataValuta.value = today(); f.DataCassa.value = today();
+  if (full || !f.Banca.value) f.Banca.value = imp().bancaPredefinita || '';
+  $$('input', f).forEach(i => i.classList.remove('invalid'));
+}
+
+function readAssegno(f) {
+  const o = {
+    DataValuta: f.DataValuta.value, DataCassa: f.DataCassa.value,
+    Importo: f.Importo.value.trim(), Banca: f.Banca.value.trim(),
+    Intestatario: f.Intestatario.value.trim(), NumAssegno: f.NumAssegno.value.trim(), Stato: f.Stato.value,
+  };
+  const bad = [];
+  if (!o.DataValuta) bad.push(f.DataValuta);
+  if (!o.DataCassa) bad.push(f.DataCassa);
+  const im = parseImporto(o.Importo);
+  if (!(im > 0)) bad.push(f.Importo);
+  if (!o.Intestatario) bad.push(f.Intestatario);
+  if (!/^\d{1,18}$/.test(o.NumAssegno)) bad.push(f.NumAssegno);
+  $$('input', f).forEach(i => i.classList.toggle('invalid', bad.includes(i)));
+  if (bad.length) {
+    bad[0].focus();
+    toast(bad[0] === f.Importo ? 'Importo non valido (es. 1234,56)' : bad[0] === f.NumAssegno ? 'Il N° assegno ammette solo numeri' : 'Compila tutti i campi obbligatori', true);
+    return null;
+  }
+  o.Importo = Math.round(im * 100) / 100;
+  o.NumAssegno = o.NumAssegno.replace(/^0+(?=\d)/, '');
+  return o;
+}
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.name === 'NumAssegno' || (t.name === 'numero' && t.form && t.form.id === 'formFiltri')) {
+    const v = t.value.replace(/\D/g, ''); if (v !== t.value) t.value = v;
+  }
+  if (t.name === 'Importo') {
+    let v = t.value.replace(/[^\d.,]/g, '').replace('.', ',');
+    const i = v.indexOf(',');
+    if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/[.,]/g, '').slice(0, 2);
+    if (v !== t.value) t.value = v;
+  }
+  if (t.classList && t.classList.contains('invalid')) t.classList.remove('invalid');
+});
+
+$('#formNuovo').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, o = readAssegno(f);
+  if (!o) return;
+  const dup = S.rows.find(r => r.NumAssegno === o.NumAssegno);
+  if (dup && !await confirmBox('N° assegno già presente', `L'assegno N° ${dup.NumAssegno} esiste già (${dup.Intestatario}, ${eur(dup.Importo)}). Inserirlo comunque?`, 'Inserisci comunque')) return;
+  const r = dbInsert(o);
+  toast('Assegno N° ' + r.NumAssegno + ' inserito correttamente.');
+  resetNuovo(false);
+  if (!isMobile()) f.Importo.focus();
+  refresh();
+  flashRow(r.ID);
+});
+
+function flashRow(id) {
+  const tr = $(`#gridBody tr[data-id="${id}"]`);
+  if (!tr) return;
+  tr.scrollIntoView({ block: 'nearest' });
+  tr.animate([{ background: '#fff4c2' }, { background: 'transparent' }], { duration: 1600 });
+  $$('td', tr).forEach(td => td.animate([{ background: '#fff4c2' }, { background: 'transparent' }], { duration: 1600 }));
+}
+
+function readFiltri() {
+  const f = $('#formFiltri');
+  const v = { tipo: 'filtri', importo: f.importo.value.trim(), intestatario: f.intestatario.value.trim(), numero: f.numero.value.trim(), stato: f.stato.value, anno: f.anno.value };
+  setView(v.importo || v.intestatario || v.numero || v.stato || v.anno ? v : { tipo: 'tutti' });
+}
+$('#formFiltri').addEventListener('input', readFiltri);
+$('#formFiltri').addEventListener('change', readFiltri);
+$('#formFiltri').addEventListener('reset', () => setTimeout(readFiltri, 0));
+$('#formFiltri').addEventListener('submit', e => e.preventDefault());
+
+function setPreset(p) {
+  const f = $('#formPeriodo'), d = new Date();
+  let a, b;
+  if (p === 'mese') { a = new Date(d.getFullYear(), d.getMonth(), 1); b = new Date(d.getFullYear(), d.getMonth() + 1, 0); }
+  if (p === 'mesePrec') { a = new Date(d.getFullYear(), d.getMonth() - 1, 1); b = new Date(d.getFullYear(), d.getMonth(), 0); }
+  if (p === 'anno') { a = new Date(d.getFullYear(), 0, 1); b = new Date(d.getFullYear(), 11, 31); }
+  f.dal.value = toIso(a); f.al.value = toIso(b);
+}
+$$('#formPeriodo [data-preset]').forEach(b => b.onclick = () => { setPreset(b.dataset.preset); $('#formPeriodo').requestSubmit(); });
+$('#formPeriodo').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  if (!f.dal.value || !f.al.value) return toast('Indica entrambe le date', true);
+  if (f.dal.value > f.al.value) return toast('La data iniziale è successiva a quella finale', true);
+  setView({ tipo: 'periodo', dal: f.dal.value, al: f.al.value, stato: f.stato.value });
+});
+
+$('#formScadenze').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, g = parseInt(f.giorni.value, 10);
+  if (!f.dal.value || !(g >= 0)) return toast('Indica data e numero di giorni', true);
+  setView({ tipo: 'scadenze', dal: f.dal.value, giorni: g });
+});
+
+/* ---------------- Tabella: ordinamento, selezione, azioni ---------------- */
+$$('#grid th[data-sort]').forEach(th => th.onclick = () => {
+  const k = th.dataset.sort;
+  S.sort = S.sort.key === k ? { key: k, dir: -S.sort.dir } : { key: k, dir: (k === 'Banca' || k === 'Intestatario' || k === 'Stato') ? 1 : -1 };
+  render();
+});
+
+let qTimer;
+$('#quickSearch').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { S.q = e.target.value.trim(); render(); }, 120); });
+
+$('#chkAll').addEventListener('change', e => {
+  S.visible.forEach(r => e.target.checked ? S.sel.add(r.ID) : S.sel.delete(r.ID));
+  render();
+});
+
+function toggleRow(id, on, shift) {
+  if (shift && S.lastClicked != null) {
+    const ids = S.visible.map(r => r.ID);
+    const a = ids.indexOf(S.lastClicked), b = ids.indexOf(id);
+    if (a >= 0 && b >= 0) { ids.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(x => S.sel.add(x)); S.lastClicked = id; return; }
+  }
+  on ? S.sel.add(id) : S.sel.delete(id);
+  S.lastClicked = id;
+}
+
+$('#gridBody').addEventListener('click', e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  const id = +tr.dataset.id;
+  if (e.target.closest('.rowbtn')) {
+    const r = e.target.closest('.rowbtn').getBoundingClientRect();
+    openCtx(id, r.right - 200, r.bottom + 4);
+    return;
+  }
+  if (e.target.type === 'checkbox') { toggleRow(id, e.target.checked, e.shiftKey); render(); return; }
+  if (isMobile()) { openEdit(id); return; }      // su telefono: tocco = modifica
+  if (e.shiftKey) toggleRow(id, true, true);
+  else if (e.ctrlKey || e.metaKey) toggleRow(id, !S.sel.has(id));
+  else { const only = S.sel.size === 1 && S.sel.has(id); S.sel.clear(); if (!only) S.sel.add(id); S.lastClicked = id; }
+  render();
+});
+$('#gridBody').addEventListener('dblclick', e => { const tr = e.target.closest('tr'); if (tr && e.target.type !== 'checkbox' && !isMobile()) openEdit(+tr.dataset.id); });
+$('#gridBody').addEventListener('contextmenu', e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  e.preventDefault();
+  openCtx(+tr.dataset.id, e.clientX, e.clientY);
+});
+
+let ctxIds = [];
+function openCtx(id, x, y) {
+  if (!S.sel.has(id)) { S.sel.clear(); S.sel.add(id); S.lastClicked = id; render(); }
+  ctxIds = [...S.sel];
+  const m = $('#ctxMenu');
+  $('[data-act=modifica]', m).hidden = ctxIds.length !== 1;
+  $('[data-act=elimina]', m).textContent = ctxIds.length > 1 ? `Elimina ${ctxIds.length} assegni` : 'Elimina';
+  m.hidden = false;
+  const w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + 'px';
+  m.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + 'px';
+}
+$('#ctxMenu').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('#ctxMenu').hidden = true;
+  const act = b.dataset.act;
+  if (act === 'modifica') openEdit(ctxIds[0]);
+  else if (act === 'elimina') deleteIds(ctxIds);
+  else setStato(ctxIds, act);
+});
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('#ctxMenu') && !e.target.closest('.rowbtn')) $('#ctxMenu').hidden = true;
+  if (!e.target.closest('#dbSwitch')) $('#dbMenu').hidden = true;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { $('#ctxMenu').hidden = true; $('#dbMenu').hidden = true; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && F.data) { e.preventDefault(); saveNow(); }
+  if (e.key === 'Delete' && S.sel.size && !$('#mainView').hidden && !document.querySelector('dialog[open]') && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) deleteIds([...S.sel]);
+});
+window.addEventListener('scroll', () => { $('#ctxMenu').hidden = true; }, true);
+
+function setStato(ids, stato) {
+  const n = dbSetStato(ids, stato);
+  toast(n === 1 ? 'Stato aggiornato: ' + stato : n + ' assegni impostati come ' + stato);
+  refresh();
+}
+
+async function deleteIds(ids) {
+  const one = ids.length === 1 ? S.rows.find(r => r.ID === ids[0]) : null;
+  const txt = one ? `Eliminare definitivamente l'assegno N° ${one.NumAssegno} di ${one.Intestatario || '—'} (${eur(one.Importo)})?` : `Eliminare definitivamente ${ids.length} assegni selezionati?`;
+  if (!await confirmBox('Elimina', txt + ' L\'operazione non è reversibile.', 'Elimina', true)) return false;
+  const n = dbDelete(ids);
+  ids.forEach(i => S.sel.delete(i));
+  toast(n === 1 ? 'Assegno eliminato' : n + ' assegni eliminati');
+  refresh();
+  return true;
+}
+
+$('#btnPagati').onclick = () => { if (S.sel.size) setStato([...S.sel], 'Pagato'); };
+$('#btnElimina').onclick = () => S.sel.size && deleteIds([...S.sel]);
+
+/* ---------------- Modifica ---------------- */
+let editId = null;
+function openEdit(id) {
+  const r = S.rows.find(x => x.ID === id); if (!r) return;
+  editId = id;
+  const f = $('#formModifica');
+  f.DataValuta.value = r.DataValuta || ''; f.DataCassa.value = r.DataCassa || '';
+  f.Importo.value = num2(r.Importo); f.Banca.value = r.Banca;
+  f.Intestatario.value = r.Intestatario; f.NumAssegno.value = r.NumAssegno; f.Stato.value = STATI.includes(r.Stato) ? r.Stato : 'In Attesa';
+  $('#modTitle').textContent = 'N° ' + r.NumAssegno;
+  $$('input', f).forEach(i => i.classList.remove('invalid'));
+  $('#dlgModifica').showModal();
+  if (isMobile()) document.activeElement.blur();
+}
+$('#formModifica').addEventListener('submit', e => {
+  e.preventDefault();
+  const o = readAssegno(e.target); if (!o) return;
+  try {
+    dbUpdate(editId, o);
+    $('#dlgModifica').close();
+    toast('Modifica assegno avvenuta con successo');
+    refresh();
+    flashRow(editId);
+  } catch (err) { toast(err.message, true); }
+});
+$('#modAnnulla').onclick = () => $('#dlgModifica').close();
+$('#modElimina').onclick = async () => { $('#dlgModifica').close(); if (!await deleteIds([editId])) openEdit(editId); };
+
+/* ---------------- Esportazione ---------------- */
+const fileStamp = () => (S.arch.nome.replace(/[^\w-]+/g, '_') + '_' + today().replace(/-/g, ''));
+function download(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const COLS = ['Data valuta', 'Data cassa', 'Importo', 'Banca', 'Intestatario', 'N° assegno', 'Stato'];
+
+$('#btnCsv').onclick = () => {
+  if (!S.visible.length) return toast('Nessun assegno da esportare', true);
+  const q = s => /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  const lines = [COLS.join(';')].concat(S.visible.map(r => [fmtDate(r.DataValuta), fmtDate(r.DataCassa), num2(r.Importo), r.Banca, r.Intestatario, r.NumAssegno, r.Stato].map(x => q(String(x))).join(';')));
+  download(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'Assegni_' + fileStamp() + '.csv');
+};
+
+$('#btnXlsx').onclick = () => {
+  if (!S.visible.length) return toast('Nessun assegno da esportare', true);
+  download(buildXlsx(S.visible, viewTitle()), 'Assegni_' + fileStamp() + '.xlsx');
+};
+
+/* Writer XLSX minimale (zip senza compressione) */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  let off = 0;
+  const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+  for (const [name, text] of files) {
+    const nb = enc.encode(name), data = enc.encode(text), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true);
+    h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nb.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), nb, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, nb.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), nb);
+    off += 30 + nb.length + data.length;
+  }
+  const csize = central.reduce((s, a) => s + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, csize, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function buildXlsx(rows, title) {
+  const x = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  const serial = iso => { if (!iso) return null; const [y, m, d] = iso.split('-').map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 86400000; };
+  const col = i => String.fromCharCode(65 + i);
+  const str = (r, i, v, s = 0) => `<c r="${col(i)}${r}" t="inlineStr"${s ? ` s="${s}"` : ''}><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+  const numc = (r, i, v, s) => v == null ? '' : `<c r="${col(i)}${r}" s="${s}"><v>${v}</v></c>`;
+  let xml = `<row r="1">${str(1, 0, title, 3)}</row><row r="3">${COLS.map((c, i) => str(3, i, c, 3)).join('')}</row>`;
+  rows.forEach((r, k) => {
+    const n = k + 4;
+    xml += `<row r="${n}">${numc(n, 0, serial(r.DataValuta), 1)}${numc(n, 1, serial(r.DataCassa), 1)}${numc(n, 2, r.Importo, 2)}${str(n, 3, r.Banca)}${str(n, 4, r.Intestatario)}${/^\d{1,15}$/.test(r.NumAssegno) ? numc(n, 5, r.NumAssegno, 4) : str(n, 5, r.NumAssegno)}${str(n, 6, r.Stato)}</row>`;
+  });
+  const last = rows.length + 3, tr = last + 1;
+  xml += `<row r="${tr}">${str(tr, 1, 'Totale', 3)}<c r="C${tr}" s="5"><f>SUM(C4:C${last})</f></c></row>`;
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="13" customWidth="1"/><col min="3" max="3" width="15" customWidth="1"/><col min="4" max="4" width="10" customWidth="1"/><col min="5" max="5" width="38" customWidth="1"/><col min="6" max="6" width="14" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/></cols><sheetData>${xml}</sheetData><autoFilter ref="A3:G${last}"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="dd/mm/yyyy"/><numFmt numFmtId="165" formatCode="#,##0.00 &quot;€&quot;"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  return zip([
+    ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+    ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Assegni" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Assegni!$A$3:$G$' + last + '</definedName></definedNames></workbook>'],
+    ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml', styles],
+    ['xl/worksheets/sheet1.xml', sheet],
+  ]);
+}
+
+/* ---------------- Stampa ---------------- */
+$('#btnStampa').onclick = () => {
+  const list = S.visible;
+  if (!list.length) return toast('Nessun assegno da stampare', true);
+  const tot = list.reduce((s, r) => s + r.Importo, 0);
+  const now = new Date();
+  $('#printArea').innerHTML = `
+    <div class="ph"><h1>${esc(viewTitle())}</h1><span>${esc(S.arch.nome)} · ${now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ${hhmm(now)}</span></div>
+    <div class="tot"><span>${S.view.tipo === 'filtri' ? esc(viewLabel()) : ''}</span><span>Totale Assegni: ${eur(tot)} · ${list.length} assegni</span></div>
+    <table><thead><tr>${COLS.map((c, i) => `<th class="${i === 2 ? 'num' : ''}">${c}</th>`).join('')}</tr></thead><tbody>
+    ${list.map(r => `<tr><td>${fmtDate(r.DataValuta)}</td><td>${fmtDate(r.DataCassa)}</td><td class="num">${eur(r.Importo)}</td><td>${esc(r.Banca)}</td><td>${esc(r.Intestatario)}</td><td>${esc(r.NumAssegno)}</td><td>${esc(r.Stato)}</td></tr>`).join('')}
+    </tbody><tfoot><tr><td colspan="2">Totale</td><td class="num">${eur(tot)}</td><td colspan="4"></td></tr></tfoot></table>`;
+  window.print();
+};
+
+/* ---------------- Cambio archivio ---------------- */
+$('#dbBtn').onclick = () => {
+  const m = $('#dbMenu');
+  if (!m.hidden) { m.hidden = true; return; }
+  m.innerHTML = F.data.archivi.map(a => `<button data-id="${esc(a.id)}" class="${S.arch && a.id === S.arch.id ? 'current' : ''}">${esc(a.nome)}<span class="sub">${a.assegni.length}</span></button>`).join('') + '<hr><button data-act="gestisci">Gestisci archivi e file…</button>';
+  m.hidden = false;
+  $$('button', m).forEach(b => b.onclick = () => {
+    m.hidden = true;
+    if (b.dataset.act) openSettings(); else if (b.dataset.id !== (S.arch && S.arch.id)) openArchive(b.dataset.id);
+  });
+};
+
+/* ---------------- Impostazioni ---------------- */
+const ICON = {
+  edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg>',
+  del: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+};
+function openSettings() {
+  if (!F.data) return toast('Apri prima un file dati', true);
+  renderSettings();
+  $('#dlgSettings').showModal();
+}
+$('#btnSettings').onclick = openSettings;
+$('#setClose').onclick = () => $('#dlgSettings').close();
+
+function renderSettings() {
+  $('#setFileName').textContent = F.name || 'assegni.json';
+  const tot = F.data.archivi.reduce((s, a) => s + a.assegni.length, 0);
+  const g = F.data.generato ? 'creato dal convertitore il ' + new Date(F.data.generato).toLocaleString('it-IT') : '';
+  const m = F.data.modificato ? 'ultima modifica ' + new Date(F.data.modificato).toLocaleString('it-IT') : '';
+  $('#setFileInfo').textContent = [F.handle ? 'salvataggio automatico nel file' : (F.dirty ? 'modifiche salvate solo in questo browser: scarica il file e caricalo su OneDrive/Drive' : 'copia di lavoro in questo browser'), tot + ' assegni', g, m].filter(Boolean).join(' · ');
+  $('#setSave').hidden = !F.handle;
+  $('#setSaveAs').textContent = window.showSaveFilePicker ? 'Salva con nome…' : 'Scarica ' + (F.name || 'assegni.json');
+  $('#setSaveAs').className = 'btn' + (!F.handle && F.dirty ? ' primary' : '');
+  const arcs = F.data.archivi;
+  $('#archList').innerHTML = arcs.map(a => `
+    <div class="dbrow" data-id="${esc(a.id)}">
+      <div class="info"><div class="nm">${esc(a.nome)}</div><div class="pt" title="${esc(a.origine || '')}">${esc(a.origine || 'creato nella web app')}</div></div>
+      <span class="cnt">${a.assegni.length} assegni</span>
+      <button class="btn sm" data-a="apri">Apri</button>
+      <button class="iconbtn" data-a="ren" title="Rinomina">${ICON.edit}</button>
+      <button class="iconbtn" data-a="del" title="Elimina archivio" ${arcs.length < 2 ? 'disabled' : ''}>${ICON.del}</button>
+    </div>`).join('');
+  $$('#archList .dbrow').forEach(row => {
+    const a = arcs.find(x => x.id === row.dataset.id);
+    $$('button', row).forEach(b => b.onclick = async () => {
+      const act = b.dataset.a;
+      if (act === 'apri') { $('#dlgSettings').close(); openArchive(a.id); }
+      if (act === 'ren') {
+        const n = await promptBox('Rinomina archivio', 'Nuovo nome', a.nome);
+        if (n) { a.nome = n; commit(); if (S.arch === a) $('#dbName').textContent = n; }
+        renderSettings();
+      }
+      if (act === 'del') {
+        if (!await confirmBox('Elimina archivio', `Eliminare l'archivio “${a.nome}” con i suoi ${a.assegni.length} assegni dal file? I database Access originali non vengono toccati.`, 'Elimina', true)) return renderSettings();
+        F.data.archivi = F.data.archivi.filter(x => x !== a);
+        commit();
+        if (S.arch === a) openArchive(F.data.archivi[0].id);
+        renderSettings();
+      }
+    });
+  });
+  const gf = $('#formGen');
+  gf.bancaPredefinita.value = imp().bancaPredefinita || '';
+  gf.giorniScadenza.value = imp().giorniScadenza;
+}
+
+$('#btnNewArch').onclick = async () => {
+  const n = await promptBox('Nuovo archivio', 'Nome dell\'archivio');
+  if (!n) return renderSettings();
+  const a = { id: uid(), nome: n, origine: '', assegni: [] };
+  F.data.archivi.push(a);
+  commit();
+  renderSettings();
+  toast('Archivio “' + n + '” creato');
+};
+$('#setSave').onclick = async () => { await saveNow(); if (!F.dirty && !F.error) toast('Salvato'); renderSettings(); };
+$('#setSaveAs').onclick = async () => { await saveAs(); renderSettings(); };
+$('#setExport').onclick = () => download(new Blob([serialize()], { type: 'application/json' }), (F.name || 'assegni.json').replace(/\.json$/i, '') + '_copia_' + today().replace(/-/g, '') + '.json');
+$('#setOpen').onclick = () => { $('#dlgSettings').close(); openFile(); };
+$('#setCloseFile').onclick = async () => {
+  if (F.dirty && !await confirmBox('Modifiche non salvate', 'Ci sono modifiche non salvate nel file. Restano nella copia locale del browser. Chiudere comunque?', 'Chiudi file', true)) return;
+  $('#dlgSettings').close();
+  F.data = null; F.handle = null; F.dirty = false; F.needPerm = false;
+  launchedByFile = false;
+  try { localStorage.setItem('ga:noAuto', '1'); } catch { }   // dopo "Chiudi file" non riapre da solo
+  updateFileStat();
+  init();
+};
+
+$('#formGen').addEventListener('submit', e => {
+  e.preventDefault();
+  const g = e.target;
+  imp().bancaPredefinita = g.bancaPredefinita.value.trim();
+  imp().giorniScadenza = Math.max(1, parseInt(g.giorniScadenza.value, 10) || 6);
+  commit();
+  toast('Impostazioni salvate');
+  if (S.arch) { render(); $('#formScadenze').giorni.value = imp().giorniScadenza; }
+});
+
+/* ---------------- App installabile (solo se pubblicata su http/https) ---------------- */
+if (/^https?:$/.test(location.protocol)) {
+  const add = (rel, href, extra) => { const l = document.createElement('link'); l.rel = rel; l.href = href; Object.assign(l, extra || {}); document.head.appendChild(l); };
+  add('manifest', 'manifest.webmanifest');
+  add('apple-touch-icon', 'icon-192.png');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // nuova versione pubblicata: avvisa e ricarica al clic
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw && nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) toast('È disponibile un aggiornamento dell\'app: verrà usato alla prossima apertura.');
+        });
+      });
+    }).catch(e => console.warn('Service worker non registrato', e));
+  }
+}
+
+/* Apertura di un file .json con doppio clic (app installata su PC) */
+let launchedByFile = false;
+if ('launchQueue' in window) {
+  window.launchQueue.setConsumer(async params => {
+    if (!params.files || !params.files.length) return;
+    launchedByFile = true;
+    const h = params.files[0];
+    try {
+      if (F.dirty && F.name !== h.name && !await confirmBox('Modifiche non salvate', 'Ci sono modifiche non salvate nel file attuale (restano nella copia locale). Aprire ' + h.name + '?', 'Apri')) return;
+      const r = await readFromHandle(h);
+      await setLoaded(r.data, { handle: h, name: r.name, lastMod: r.lastMod });
+      toast('Aperto ' + r.name);
+    } catch (e) { toast('Impossibile aprire il file: ' + e.message, true); }
+  });
+}
+
+init();
+
+</script>
+</body>
+</html>
