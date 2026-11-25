@@ -362,7 +362,7 @@ tr:hover .rowbtn, .rowbtn:focus { opacity: 1; }
       <button class="btn ghost" id="btnNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Inizia un archivio vuoto</button>
     </div>
     <div class="start-help" id="startHelp"></div>
-    <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    <input type="file" id="fileInput" hidden><!-- nessun filtro: su iPhone i .json da Google Drive verrebbero rifiutati -->
   </div>
 </main>
 
@@ -671,9 +671,18 @@ const KV = (() => {
 })();
 
 /* ---------------- Formato dati ---------------- */
+// Legge il testo del file: tollera BOM, spazi e segnala in modo chiaro i file sbagliati
+function parseText(t) {
+  t = String(t || '').replace(/^\uFEFF/, '').trim();
+  if (!t) throw new Error('il file è vuoto');
+  if (t[0] === '<') throw new Error('non è il file degli assegni (sembra una pagina web: scegli il file .json, non un collegamento)');
+  try { return JSON.parse(t); }
+  catch { throw new Error('il contenuto non è un JSON valido (file sbagliato o scaricato solo in parte)'); }
+}
+
 function normalizeData(o) {
   if (Array.isArray(o)) o = { archivi: [{ nome: 'Assegni', assegni: o }] };   // elenco semplice di assegni
-  if (!o || typeof o !== 'object' || !Array.isArray(o.archivi)) throw new Error('Il file non è un file dati di Gestione Assegni.');
+  if (!o || typeof o !== 'object' || !Array.isArray(o.archivi)) throw new Error('il file non contiene dati di Gestione Assegni (manca l\'elenco degli archivi)');
   if (o.formato && o.formato !== FORMATO) throw new Error('Formato file non riconosciuto: ' + o.formato);
   const data = {
     formato: FORMATO, versione: 1,
@@ -738,7 +747,7 @@ async function setLoaded(data, src) {
 
 async function readFromHandle(h) {
   const f = await h.getFile();
-  const data = normalizeData(JSON.parse(await f.text()));
+  const data = normalizeData(parseText(await f.text()));
   return { data, lastMod: f.lastModified, name: f.name };
 }
 
@@ -764,10 +773,13 @@ async function openFile() {
 $('#fileInput').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
-    const data = normalizeData(JSON.parse(await f.text()));
+    const data = normalizeData(parseText(await f.text()));
     await setLoaded(data, { name: f.name });
     toast('Aperto ' + f.name);
-  } catch (err) { toast('Impossibile aprire il file: ' + err.message, true); }
+  } catch (err) {
+    const kb = f.size ? ' · ' + Math.max(1, Math.round(f.size / 1024)) + ' KB' : '';
+    toast('Impossibile aprire “' + f.name + '”' + kb + ': ' + err.message, true);
+  }
 });
 
 async function reopenLast() {

@@ -1,6 +1,6 @@
 /* Service worker di Gestione Assegni: permette di usare l'app anche senza internet.
    Per pubblicare una nuova versione basta cambiare il numero qui sotto. */
-const VERSION = 'assegni-v1';
+const VERSION = 'assegni-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
